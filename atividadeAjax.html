@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	<meta charset="UTF-8"/>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<script>
+		function loadXMLDoc(limpaMsgs,url) {
+			if(limpaMsgs == undefined || limpaMsgs){
+				limparMsgs();
+			}
+			if(url == undefined){
+				url = "http://www.smartsoft.com.br/webservice/restifydb/Employees/departments/?_view=json&_expand=yes&_count=10";
+			}
+			var xmlhttp = new XMLHttpRequest();
+			
+			xmlhttp.onreadystatechange=function() {
+				if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+					var data = JSON.parse(xmlhttp.responseText);
+					var tabelaHtml ="<div class='col-md-offset-2 col-md-7 panel panel-default'>"
+		  			tabelaHtml += "<div class='panel-heading'>"
+		    		tabelaHtml += "<h3 class='panel-title'>Departamento</h3>"
+		  			tabelaHtml += "</div>"
+		  			tabelaHtml += criarComponentePaginacao(data.restify);
+					tabelaHtml += "<table class='table'>"
+					tabelaHtml += "<th>Num</th>"
+					tabelaHtml += "<th>Departamento</th>"
+
+					for(var i = 0;i < data.restify.rows.length;i++){
+						tabelaHtml += "<tr>"
+						tabelaHtml += "<td>"
+						tabelaHtml += data.restify.rows[i].values.dept_no.value;
+						tabelaHtml += "</td>"
+						tabelaHtml += "<td>"
+						tabelaHtml += data.restify.rows[i].values.dept_name.value;
+						tabelaHtml += "</td>"
+						tabelaHtml += "</tr>"
+					}
+					tabelaHtml += "</table>"
+					tabelaHtml +="</div>";
+
+					document.getElementById('secao').innerHTML = tabelaHtml; 
+				}
+			}
+			xmlhttp.open("GET", url, true);
+			xmlhttp.send();
+		}
+		function inserirRegistro() {
+			codigo = document.getElementById('codigo');
+			departamento = document.getElementById('departamento');
+
+			if(validarCamposObrigatorios(codigo.value,departamento.value)){
+
+				var xmlhttp = new XMLHttpRequest();
+				
+				xmlhttp.onreadystatechange=function() {
+					if (xmlhttp.readyState==4) {      
+						inserirMsg('sucesso','Registro inserido com sucesso');
+						loadXMLDoc(false);
+					}
+				}
+	            xmlhttp.open("POST", "http://www.smartsoft.com.br/webservice/restifydb/Employees/departments", true);
+				xmlhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');          
+				xmlhttp.send('_data={"dept_no": "'+codigo.value+'", "dept_name": "'+departamento.value+'"}');
+				codigo.value = '';
+				departamento.value = '';
+
+			
+			}
+		}
+		function alterarRegistro() {
+			codigo = document.getElementById('codigo');
+			departamento = document.getElementById('departamento');
+
+			if(validarCamposObrigatorios(codigo.value,departamento.value)){
+
+				var xmlhttp = new XMLHttpRequest();
+				
+				xmlhttp.onreadystatechange=function() {
+					if (xmlhttp.readyState==4) {      
+						inserirMsg('sucesso','Registro alterado com sucesso');
+						loadXMLDoc(false);
+					}
+				}
+	            xmlhttp.open("PUT", "http://www.smartsoft.com.br/webservice/restifydb/Employees/departments/"+codigo.value, true);
+				xmlhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');            
+				xmlhttp.send('_data={"dept_name": "'+departamento.value+'"}');
+				codigo.value = '';
+				departamento.value = '';
+
+			
+			}
+		}
+		function excluirRegistro(codigo) {
+			codigo = document.getElementById('codigo');
+			departamento = document.getElementById('departamento');
+
+			if(validarCamposObrigatorios(codigo.value)){
+
+				if(confirm('Deseja realmente excluir o departamento '+codigo.value)){
+
+					var xmlhttp = new XMLHttpRequest();
+					
+					xmlhttp.onreadystatechange=function() {
+						if (xmlhttp.readyState==4) {      
+							inserirMsg('sucesso','Registro Excluido com sucesso');
+							loadXMLDoc(false);
+						}
+					}
+		            xmlhttp.open("DELETE", "http://www.smartsoft.com.br/webservice/restifydb/Employees/departments/"+codigo.value, true);
+					xmlhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+					xmlhttp.send('_data={"dept_no": "'+codigo.value+'"}');                
+					codigo.value = '';
+					departamento.value = '';
+
+				}
+			}
+		}
+		function validarCamposObrigatorios(codigo,departamento){
+			var msg = '';
+			if(codigo != null && codigo == ''){
+				msg = 'O campo Código é obrigatório.<br>';
+			}
+			if(departamento != null && departamento == ''){
+				msg += 'O campo Departamento é obrigatório';
+			}
+
+			if(msg != ''){
+				inserirMsg('erro',msg);
+				return false;
+			}
+			return true;
+		}
+		function inserirMsg(tipo,msg){
+			var classMsg = '';
+			switch(tipo){
+				case 'erro':
+					classMsg = 'alert alert-danger';
+					break;
+				case 'sucesso':
+					classMsg = 'alert alert-success';
+					break; 
+			}
+
+			var divMensagem = document.getElementById('msg');
+			divMensagem.setAttribute('class',classMsg);
+			divMensagem.innerHTML = msg;
+			window.scrollTo(0,0);
+		}
+		function limparMsgs(){
+			divMensagem = document.getElementById('msg');
+			divMensagem.innerHTML = '';
+			divMensagem.classList = '';
+		}
+		function criarComponentePaginacao(json){
+			
+			var paginaAnterior;
+			var proximaPagina;
+			var tabelaHtml = '';
+
+			if(json.previousPage != null){
+				paginaAnterior = json.previousPage.href;
+			}
+			if(json.nextPage != null){
+				proximaPagina = json.nextPage.href;
+			}
+
+			tabelaHtml += "<nav aria-label='...'>"
+			tabelaHtml += "<ul class='pager'>"
+			if(paginaAnterior != null){
+				tabelaHtml += "<li><a href='javascript:loadXMLDoc(false,"+'"'+paginaAnterior+'"'+")'>Anterior</a></li>"	
+			}
+			if(proximaPagina != null){
+				tabelaHtml += "<li><a href='javascript:loadXMLDoc(false,"+'"'+proximaPagina+'"'+")'>Próxima</a></li>"
+			}
+			tabelaHtml += "</ul>"
+			tabelaHtml += "</nav>"
+			return tabelaHtml;
+		}
+	</script></head>
+	<body>
+		<div id="msg"></div>
+		<address align="center">
+  		  <strong>Paulo Vitor Amorim</strong><br>
+		  <a href="mailto:#">paulovitor.10@hotmail.com</a>
+		</address>
+		<div class="col-md-offset-2 col-md-7 panel panel-default">
+		  <div class="panel-heading">
+		    <h3 class="panel-title">Departamento</h3>
+		  </div>
+		  <div class="panel-body">
+		    <div class="row">
+		  		<div class="col-md-offset-1 col-md-3">
+						<label for="codigo">Código:</label>
+						<input type="text" id="codigo" class="form-control"/>
+		  		</div>
+		  		<div class="col-md-7">
+						<label for="departamento">Departamento:</label>
+						<input type="text" id="departamento" class="form-control"/>
+		  		</div>
+  			</div>
+		  </div>
+		</div>
+		<div class="clearfix"></div>
+		<div align="center" style="margin-top:20px;margin-bottom:20px;">
+			<button class="btn btn-default" type="button" onclick="loadXMLDoc()">Listar</button> 
+			<button class="btn btn-default" id="botaoSalvar" onclick="inserirRegistro()">Salvar</button>
+			<button class="btn btn-default" id="botaoSalvar" onclick="alterarRegistro()">Alterar</button>
+			<button class="btn btn-default" id="botaoSalvar" onclick="excluirRegistro()">Excluir</button>
+		</div>
+		<div id="secao"></div>
+	</body>
+</html>
